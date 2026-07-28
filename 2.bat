@@ -1,1 +1,1 @@
-move /Y "libs\arm64-v8a\Identity5.sh" ".\"
+move /Y "libs\arm64-v8a\qq.sh" ".\"

@@ -1,390 +1,258 @@
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef IDV_KERNEL_DRIVER_QXQD_HPP
+#define IDV_KERNEL_DRIVER_QXQD_HPP
+
+#include <arpa/inet.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <dirent.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <vector>
-#include <string>
+#include <sys/socket.h>
+#include <unistd.h>
 
-class c_driver
-{
+#define OP_CMD_READ 601
+#define OP_CMD_WRITE 602
+#define OP_CMD_BASE 603
+#define OP_CMD_GETPID 604
+#define OP_CMD_HIDE_PROCESS 605
+#define OP_CMD_UN_HOOK 606
+#define OP_CMD_RECOVER_PROCESS 607
+#define OP_CMD_GYRO 608
+
+#define PARADISE_GYRO_MASK_GYRO (1u << 0)
+#define PARADISE_GYRO_MASK_UNCAL (1u << 1)
+#define PARADISE_GYRO_MASK_ALL (PARADISE_GYRO_MASK_GYRO | PARADISE_GYRO_MASK_UNCAL)
+
+struct paradise_gyro_config_cmd {
+    int enable;
+    uint32_t type_mask;
+    float x;
+    float y;
+    float z;
+};
+
+typedef struct _COPY_MEMORY {
+    pid_t pid;
+    uintptr_t addr;
+    void *buffer;
+    size_t size;
+} COPY_MEMORY, *PCOPY_MEMORY;
+
+typedef struct _MODULE_BASE {
+    pid_t pid;
+    char *name;
+    uintptr_t base;
+    short index;
+} MODULE_BASE, *PMODULE_BASE;
+
+class c_driver {
 private:
-	int fd;
-	pid_t pid;
+    int fd;
+    pid_t pid;
 
-	typedef struct _COPY_MEMORY
-	{
-		pid_t pid;
-		uintptr_t addr;
-		void *buffer;
-		size_t size;
-	} COPY_MEMORY, *PCOPY_MEMORY;
-
-	typedef struct _MODULE_BASE
-	{
-		pid_t pid;
-		char *name;
-		uintptr_t base;
-	} MODULE_BASE, *PMODULE_BASE;
-
-	struct process
-	{
-		pid_t process_pid;
-		char process_comm[15];
-	};
-
-	enum OPERATIONS
-	{
-		OP_INIT_KEY = 0x800,
-		OP_READ_MEM = 0x801,
-		OP_WRITE_MEM = 0x802,
-		OP_MODULE_BASE = 0x803,
-		OP_HIDE_PROCESS = 0x804,
-	};
-
-	char *driver_path()
-	{
-		printf("\033[32m;1m welcome to kernel.h by Cycle1337 \033[0m\n");
-
-		const char *dev_path = "/dev";
-		DIR *dir = opendir(dev_path);
-		if (dir == NULL)
-		{
-			printf("\033[31m;1m [!] failed to open /dev \033[0m\n");
-			return NULL;
-		}
-
-		const std::vector<std::string> excluded_names = {
-			"binder", "common", "ashmem", "stdin", "stdout", "stderr"};
-
-		struct dirent *entry;
-		char *file_path = NULL;
-		while ((entry = readdir(dir)) != NULL)
-		{
-			const char *current_name = entry->d_name;
-
-			if (strcmp(current_name, ".") == 0 || strcmp(current_name, "..") == 0)
-			{
-				continue;
-			}
-
-			if (strstr(current_name, "gpiochip") != NULL ||
-				strchr(current_name, '_') != NULL ||
-				strchr(current_name, '-') != NULL ||
-				strchr(current_name, ':') != NULL)
-			{
-				continue;
-			}
-
-			bool is_excluded = false;
-			for (const auto &name : excluded_names)
-			{
-				if (strcmp(current_name, name.c_str()) == 0)
-				{
-					is_excluded = true;
-					break;
-				}
-			}
-			if (is_excluded)
-			{
-				continue;
-			}
-
-			size_t path_length = strlen(dev_path) + strlen(current_name) + 2;
-			file_path = (char *)malloc(path_length);
-			if (!file_path)
-				continue;
-
-			snprintf(file_path, path_length, "%s/%s", dev_path, current_name);
-
-			struct stat file_info;
-			if (stat(file_path, &file_info) < 0)
-			{
-				free(file_path);
-				file_path = NULL;
-				continue;
-			}
-
-			if (S_ISCHR(file_info.st_mode) || S_ISBLK(file_info.st_mode))
-			{
-				if (localtime(&file_info.st_ctime)->tm_year + 1900 <= 1980)
-				{
-					free(file_path);
-					file_path = NULL;
-					continue;
-				}
-
-				if (file_info.st_atime == file_info.st_ctime &&
-					file_info.st_size == 0 &&
-					file_info.st_gid == 0 &&
-					file_info.st_uid == 0 &&
-					strlen(current_name) == 6)
-				{
-					closedir(dir);
-					return file_path;
-				}
-			}
-
-			free(file_path);
-			file_path = NULL;
-		}
-
-		closedir(dir);
-		return NULL;
-	}
+    bool probe_kernel() {
+        const uint32_t expected = 0x4B524E4C;
+        uint32_t actual = 0;
+        COPY_MEMORY command{};
+        command.pid = getpid();
+        command.addr = reinterpret_cast<uintptr_t>(&expected);
+        command.buffer = &actual;
+        command.size = sizeof(actual);
+        return ioctl(fd, OP_CMD_READ, &command) == 0 && actual == expected;
+    }
 
 public:
-	c_driver()
-	{
-		char *device_name = driver_path();
-		if (device_name == NULL)
-		{
-			printf("\033[31m;1m [!] driver not found \033[0m\n");
-			exit(0);
-		}
-		fd = open(device_name, O_RDWR);
+    c_driver() : fd(socket(AF_INET, SOCK_STREAM, 0)), pid(-1) {
+        if (fd < 0 || !probe_kernel()) {
+            std::printf("[-] 内核获取失败，程序结束\n");
+            std::fflush(stdout);
+            if (fd >= 0) {
+                close(fd);
+            }
+            std::exit(EXIT_FAILURE);
+        }
+    }
 
-		if (fd == -1)
-		{
-			printf("\033[31m;1m [!] failed to open %s | fd: -1 \033[0m\n", device_name);
-			free(device_name);
-			exit(0);
-		}
+    ~c_driver() {
+        if (fd >= 0) {
+            close(fd);
+        }
+    }
 
-		printf("\033[33m;1m [-] driver path: %s | fd: %d \033[0m\n", device_name, fd);
-		free(device_name);
-	}
+    bool ready() const {
+        return fd >= 0;
+    }
 
-	~c_driver()
-	{
-		if (fd > 0)
-			close(fd);
-	}
+    void initialize(pid_t target_pid) {
+        pid = target_pid;
+    }
 
-	void initialize(pid_t pid)
-	{
-		this->pid = pid;
-	}
+    bool read(uintptr_t addr, void *buffer, size_t size) {
+        if (!ready() || pid <= 0 || buffer == nullptr || size == 0) {
+            return false;
+        }
 
-	bool init_key(char *key)
-	{
-		char buf[0x100];
-		strcpy(buf, key);
-		if (ioctl(fd, OP_INIT_KEY, buf) != 0)
-		{
-			return false;
-		}
-		return true;
-	}
+        COPY_MEMORY command{};
+        command.pid = pid;
+        command.addr = addr;
+        command.buffer = buffer;
+        command.size = size;
+        return ioctl(fd, OP_CMD_READ, &command) == 0;
+    }
 
-	bool read(uintptr_t addr, void *buffer, size_t size)
-	{
-		COPY_MEMORY cm;
+    bool write(uintptr_t addr, const void *buffer, size_t size) {
+        if (!ready() || pid <= 0 || buffer == nullptr || size == 0) {
+            return false;
+        }
 
-		cm.pid = this->pid;
-		cm.addr = addr;
-		cm.buffer = buffer;
-		cm.size = size;
+        COPY_MEMORY command{};
+        command.pid = pid;
+        command.addr = addr;
+        command.buffer = const_cast<void *>(buffer);
+        command.size = size;
+        return ioctl(fd, OP_CMD_WRITE, &command) == 0;
+    }
 
-		if (ioctl(fd, OP_READ_MEM, &cm) != 0)
-		{
-			return false;
-		}
-		return true;
-	}
+    template <typename T>
+    T read(uintptr_t addr) {
+        T result{};
+        read(addr, &result, sizeof(T));
+        return result;
+    }
 
-	bool write(uintptr_t addr, void *buffer, size_t size)
-	{
-		COPY_MEMORY cm;
+    template <typename T>
+    bool write(uintptr_t addr, const T &value) {
+        return write(addr, &value, sizeof(T));
+    }
 
-		cm.pid = this->pid;
-		cm.addr = addr;
-		cm.buffer = buffer;
-		cm.size = size;
+    uintptr_t get_module_base(const char *module_name, short index = 0) {
+        if (!ready() || pid <= 0 || module_name == nullptr) {
+            return 0;
+        }
 
-		if (ioctl(fd, OP_WRITE_MEM, &cm) != 0)
-		{
-			return false;
-		}
-		return true;
-	}
+        MODULE_BASE command{};
+        command.pid = pid;
+        command.name = const_cast<char *>(module_name);
+        command.index = index;
+        if (ioctl(fd, OP_CMD_BASE, &command) != 0) {
+            return 0;
+        }
+        return command.base;
+    }
 
-	template <typename T>
-	T read(uintptr_t addr)
-	{
-		T res;
-		if (this->read(addr, &res, sizeof(T)))
-			return res;
-		return {};
-	}
+    bool hide_process() {
+        return ready() && ioctl(fd, OP_CMD_HIDE_PROCESS) == 0;
+    }
 
-	template <typename T>
-	bool write(uintptr_t addr, T value)
-	{
-		return this->write(addr, &value, sizeof(T));
-	}
+    bool recover_process() {
+        return ready() && ioctl(fd, OP_CMD_RECOVER_PROCESS) == 0;
+    }
 
-	uintptr_t get_module_base(char *name)
-	{
-		MODULE_BASE mb;
-		char buf[0x100];
-		strcpy(buf, name);
-		mb.pid = this->pid;
-		mb.name = buf;
+    bool un_hook() {
+        return ready() && ioctl(fd, OP_CMD_UN_HOOK) == 0;
+    }
 
-		if (ioctl(fd, OP_MODULE_BASE, &mb) != 0)
-		{
-			return 0;
-		}
-		return mb.base;
-	}
+    bool gyro_update(bool enable, float x, float y,
+                     uint32_t type_mask = PARADISE_GYRO_MASK_ALL) {
+        if (!ready()) {
+            return false;
+        }
 
-	void hide_process()
-	{
-		ioctl(fd, OP_HIDE_PROCESS);
-	}
+        paradise_gyro_config_cmd command{};
+        command.enable = enable ? 1 : 0;
+        command.type_mask = type_mask;
+        command.x = x;
+        command.y = y;
+        return ioctl(fd, OP_CMD_GYRO, &command) == 0;
+    }
 };
 
 static c_driver *driver = new c_driver();
+static pid_t pid = -1;
 
-/*--------------------------------------------------------------------------------------------------------*/
-
-typedef char PACKAGENAME;	// 包名
-pid_t pid;	// 进程ID
-/*
-int get_name_pid(const std::string& PackageName)
-{
-    FILE* fp;
-    std::string cmd = "pidof " + PackageName;
-    fp = popen(cmd.c_str(), "r");
-    fscanf(fp, "%d", &pid);
-    pclose(fp);
-    if (pid > 0)
-    {
-        driver->initialize(pid);
+inline int getPID(char *package_name) {
+    if (package_name == nullptr || package_name[0] == '\0') {
+        return -1;
     }
-    return pid;
-}
-*/
-int get_name_pid(char* PackageName)
-{
-	FILE* fp;
-    char cmd[0x100] = "pidof ";
-    strcat(cmd, PackageName);
-    fp = popen(cmd,"r");
-    fscanf(fp,"%d", &pid);
-    pclose(fp);
-	if (pid > 0)
-	{
-		driver->initialize(pid);
-	}
-    return pid;
+
+    char command[256];
+    if (std::snprintf(command, sizeof(command), "pidof %s", package_name) >=
+        static_cast<int>(sizeof(command))) {
+        return -1;
+    }
+
+    FILE *process = popen(command, "r");
+    if (process == nullptr) {
+        return -1;
+    }
+
+    pid_t target_pid = -1;
+    if (std::fscanf(process, "%d", &target_pid) != 1) {
+        target_pid = -1;
+    }
+    pclose(process);
+
+    if (target_pid > 0) {
+        pid = target_pid;
+        driver->initialize(target_pid);
+    }
+    return target_pid;
 }
 
-bool PidExamIne()
-{
-	char path[128];
-	sprintf(path, "/proc/%d",pid);
-	if (access(path,F_OK) != 0)
-	{
-		printf("\033[31;1m");
-		puts("获取进程PID失败!");
-		exit(1);
-	}
-	return true;
-}
-/*
-void* getModuleBase(char* module_name)
-{
-    uintptr_t base = 0;
-    base = driver->get_module_base(module_name);
-    return reinterpret_cast<void*>(base);
-}
-*/
-long getModuleBase(char* module_name)
-{
-	uintptr_t base=0;
-	base = driver->get_module_base(module_name);
-	return base;
+inline int get_name_pid(char *package_name) {
+    return getPID(package_name);
 }
 
-// 读取内存
-bool vm_readv(unsigned long address, void *buffer, size_t size)
-{
-	return driver->read(address, buffer, size);
+inline bool PidExamIne() {
+    char path[64];
+    std::snprintf(path, sizeof(path), "/proc/%d", pid);
+    return pid > 0 && access(path, F_OK) == 0;
 }
 
-// 写入内存
-bool vm_writev(unsigned long address, void *buffer, size_t size)
-{
-	return driver->write(address, buffer, size);
+inline long getModuleBase(char *module_name) {
+    return static_cast<long>(driver->get_module_base(module_name));
 }
 
-// 获取F类内存
-float getfloat(unsigned long addr)
-{
-	float var = 0;
-	vm_readv(addr, &var, 4);
-	return (var);
+inline bool vm_readv(unsigned long address, void *buffer, size_t size) {
+    return driver->read(address, buffer, size);
 }
 
-// 获取F类内存
-float getFloat(unsigned long addr)
-{
-	float var = 0;
-	vm_readv(addr, &var, 4);
-	return (var);
+inline bool vm_writev(unsigned long address, const void *buffer, size_t size) {
+    return driver->write(address, buffer, size);
 }
 
-// 获取D类内存
-int getdword(unsigned long addr)
-{
-	int var = 0;
-	vm_readv(addr, &var, 4);
-	return (var);
+inline float getfloat(unsigned long address) {
+    return driver->read<float>(address);
 }
 
-// 获取D类内存
-int getDword(unsigned long addr)
-{
-	int var = 0;
-	vm_readv(addr, &var, 4);
-	return (var);
+inline float getFloat(unsigned long address) {
+    return driver->read<float>(address);
 }
 
-// 获取指针(32位游戏)
-unsigned int getPtr32(unsigned int addr)
-{
-	unsigned int var = 0;
-	vm_readv(addr, &var, 4);
-	return (var);
+inline int getdword(unsigned long address) {
+    return driver->read<int>(address);
 }
 
-// 获取指针(64位游戏)
-unsigned long getPtr64(unsigned long addr)
-{
-	addr=addr& 0xffffffffffffff;
-	long var = 0;
-    driver->read(addr, &var, 8);
-	return var& 0xffffffffffffff;
+inline int getDword(unsigned long address) {
+    return driver->read<int>(address);
 }
 
-
-   // 写入D类内存 
-void writedword(unsigned long addr, int data)
-{
-   vm_writev(addr, &data, 4);
-} 
-    
-
-
-void writefloat(unsigned long addr, float data)
-{
-	vm_writev(addr, &data, 4);
+inline unsigned int getPtr32(unsigned int address) {
+    return driver->read<unsigned int>(address);
 }
+
+inline unsigned long getPtr64(unsigned long address) {
+    return driver->read<unsigned long>(address) & 0x00FFFFFFFFFFFFFFUL;
+}
+
+inline void writedword(unsigned long address, int data) {
+    driver->write(address, data);
+}
+
+inline void writefloat(unsigned long address, float data) {
+    driver->write(address, data);
+}
+
+#endif

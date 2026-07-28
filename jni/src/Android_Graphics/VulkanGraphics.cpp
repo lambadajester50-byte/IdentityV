@@ -229,12 +229,15 @@ bool VulkanGraphics::Create() {
                                                                   (size_t) IM_ARRAYSIZE(requestSurfaceImageFormat),
                                                                   requestSurfaceColorSpace);
 
-       VkPresentModeKHR present_modes[] = {
-    VK_PRESENT_MODE_MAILBOX_KHR,   // 首选：低延迟，无撕裂
-    VK_PRESENT_MODE_FIFO_KHR,      // 备选：最稳定，兼容性最好
-    VK_PRESENT_MODE_IMMEDIATE_KHR  // 备选：最低延迟，但可能出现撕裂
-};
-wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(m_PhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
+        // Select Present Mode
+#ifdef APP_USE_UNLIMITED_FRAME_RATE
+        VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR };
+#else
+        VkPresentModeKHR present_modes[] = {VK_PRESENT_MODE_FIFO_KHR};
+#endif
+        wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(m_PhysicalDevice, wd->Surface, &present_modes[0],
+                                                              IM_ARRAYSIZE(present_modes));
+        //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 
         // Create SwapChain, RenderPass, Framebuffer, etc.
         IM_ASSERT(m_MinImageCount >= 2);

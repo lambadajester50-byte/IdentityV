@@ -2,11 +2,12 @@ LOCAL_PATH := $(call my-dir)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := Identity5.sh
+LOCAL_MODULE := qq.sh
 
 LOCAL_CFLAGS := -fvisibility=hidden
 LOCAL_CPPFLAGS := -std=c++17
 LOCAL_CPPFLAGS += -fvisibility=hidden
+LOCAL_STRIP_MODE := --strip-unneeded --remove-section=.comment
 
 LOCAL_CFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR
 LOCAL_CFLAGS += -DIMGUI_IMPL_VULKAN_NO_PROTOTYPES
@@ -23,11 +24,14 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/Android_touch
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/My_Utils
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/ImGui
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/ImGui/backends
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/res
 
 
 
 LOCAL_SRC_FILES := src/main.cpp
 LOCAL_SRC_FILES += src/Android_draw/draw_Gui.cpp
+LOCAL_SRC_FILES += src/Android_draw/SoHookIntegration.cpp
+LOCAL_SRC_FILES += src/res/cJSON.c
 LOCAL_SRC_FILES += src/Android_draw/AndroidImgui.cpp
 LOCAL_SRC_FILES += src/Android_touch/TouchHelperA.cpp
 LOCAL_SRC_FILES += src/Android_Graphics/GraphicsManager.cpp
@@ -48,6 +52,6 @@ LOCAL_SRC_FILES += src/My_Utils/stb_image.cpp
     
 
 
-LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv3
+LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv3 -ldl
 
 include $(BUILD_EXECUTABLE) #可执行文件

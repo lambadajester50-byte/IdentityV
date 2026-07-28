@@ -71,6 +71,7 @@ static const NameMapping player_table[] = {
     {"w_gjs", "[弓箭手]"},
     {"w_hds", "[幻灯师]"},
     {"m_ttds", "[逃脱大师]"},
+    {"w_mj", "[默剧演员]"}
 };
 
 // ==================== 监管者映射表 ====================
@@ -215,6 +216,6 @@ static const char* getprop(const char* 类名) {
 static const char* getscene(const char* 类名) {
     if (!类名) return nullptr;
     if (strstr(类名, "prop_76")) return "地窖";
-    if (strstr(类名, "sender") && strstr(类名, "low")) return "电机";
+    if (strstr(类名, "sender")) return "电机";
     return nullptr;
 }

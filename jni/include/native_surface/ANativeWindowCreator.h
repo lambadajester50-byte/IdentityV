@@ -1,6 +1,6 @@
 #ifndef A_NATIVE_WINDOW_CREATOR_H // !A_NATIVE_WINDOW_CREATOR_H
 #define A_NATIVE_WINDOW_CREATOR_H
-//
+
 #include <android/native_window.h>
 #include <android/log.h>
 #include <dlfcn.h>
@@ -18,9 +18,14 @@
         __android_log_print(ANDROID_LOG_ERROR, "ImGui", "[-] Method not found: %s -> %s::%s", MethodSignature, #ClassName, #MethodName); \
     }
 
-namespace android {
-    namespace detail {
-        namespace ui {
+namespace android
+{
+    using ::ANativeWindow;
+
+    namespace detail
+    {
+        namespace ui
+        {
             // A LayerStack identifies a Z-ordered group of layers. A layer can only be associated to a single
             // LayerStack, but a LayerStack can be associated to multiple displays, mirroring the same content.
             struct LayerStack
@@ -140,7 +145,11 @@ namespace android {
 
             void (*SurfaceComposerClient__Transaction__Constructor)(void *thiz) = nullptr;
             void *(*SurfaceComposerClient__Transaction__SetLayer)(void *thiz, StrongPointer<void> &surfaceControl, int32_t z) = nullptr;
+            void *(*SurfaceComposerClient__Transaction__SetMetadata)(void *thiz, StrongPointer<void> &surfaceControl, uint32_t key, void *parcel) = nullptr;
             void *(*SurfaceComposerClient__Transaction__SetTrustedOverlay)(void *thiz, StrongPointer<void> &surfaceControl, bool isTrustedOverlay) = nullptr;
+
+            void *(*SurfaceComposerClient__Transaction__SetFlags)(void *thiz, StrongPointer<void> &surfaceControl, uint32_t flags, uint32_t mask) = nullptr;
+
             int32_t (*SurfaceComposerClient__Transaction__Apply)(void *thiz, bool synchronous, bool oneWay) = nullptr;
 
             int32_t (*SurfaceControl__Validate)(void *thiz) = nullptr;
@@ -167,20 +176,25 @@ namespace android {
                         {
                             {reinterpret_cast<void **>(&LayerMetadata__Constructor), "_ZN7android3gui13LayerMetadataC2Ev"},
                             {reinterpret_cast<void **>(&SurfaceComposerClient__CreateSurface), "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjiiRKNS_2spINS_7IBinderEEENS_3gui13LayerMetadataEPj"},
-                         },
+                            {reinterpret_cast<void **>(&LayerMetadata__setInt32), "_ZN7android3gui13LayerMetadata8setInt32Eji"},
+
+                        },
                     },
                     {
                         15,
                         {
                             {reinterpret_cast<void **>(&LayerMetadata__Constructor), "_ZN7android3gui13LayerMetadataC2Ev"},
                             {reinterpret_cast<void **>(&SurfaceComposerClient__CreateSurface), "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjiiRKNS_2spINS_7IBinderEEENS_3gui13LayerMetadataEPj"},
-                         },
+                            {reinterpret_cast<void **>(&LayerMetadata__setInt32), "_ZN7android3gui13LayerMetadata8setInt32Eji"},
+
+                        },
                     },
                     {
                         14,
                         {
                             {reinterpret_cast<void **>(&LayerMetadata__Constructor), "_ZN7android3gui13LayerMetadataC2Ev"},
                             {reinterpret_cast<void **>(&SurfaceComposerClient__CreateSurface), "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjiiRKNS_2spINS_7IBinderEEENS_3gui13LayerMetadataEPj"},
+                            {reinterpret_cast<void **>(&LayerMetadata__setInt32), "_ZN7android3gui13LayerMetadata8setInt32Eji"},
                         },
                     },
                     {
@@ -230,26 +244,30 @@ namespace android {
                 ResolveMethod(LayerMetadata, Constructor, libgui, "_ZN7android13LayerMetadataC2Ev");
                 ResolveMethod(LayerMetadata, setInt32, libgui, "_ZN7android13LayerMetadata8setInt32Eji");
 
-
                 ResolveMethod(SurfaceComposerClient, Constructor, libgui, "_ZN7android21SurfaceComposerClientC2Ev");
                 ResolveMethod(SurfaceComposerClient, CreateSurface, libgui, "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjijRKNS_2spINS_7IBinderEEENS_13LayerMetadataEPj");
-                ResolveMethod(SurfaceComposerClient, GetInternalDisplayToken, libgui, "_ZN7android21SurfaceComposerClient23getInternalDisplayTokenEv");  //小于或者等于安卓13
+                ResolveMethod(SurfaceComposerClient, GetInternalDisplayToken, libgui, "_ZN7android21SurfaceComposerClient23getInternalDisplayTokenEv");
                 ResolveMethod(SurfaceComposerClient, GetDisplayState, libgui, "_ZN7android21SurfaceComposerClient15getDisplayStateERKNS_2spINS_7IBinderEEEPNS_2ui12DisplayStateE");
-                ResolveMethod(SurfaceComposerClient, GetDisplayInfo, libgui, "_ZN7android21SurfaceComposerClient14getDisplayInfoERKNS_2spINS_7IBinderEEEPNS_11DisplayInfoE"); //安卓10及以下
+                ResolveMethod(SurfaceComposerClient, GetDisplayInfo, libgui, "_ZN7android21SurfaceComposerClient14getDisplayInfoERKNS_2spINS_7IBinderEEEPNS_11DisplayInfoE");
                 ResolveMethod(SurfaceComposerClient, GetPhysicalDisplayIds, libgui, "_ZN7android21SurfaceComposerClient21getPhysicalDisplayIdsEv");
                 ResolveMethod(SurfaceComposerClient, GetPhysicalDisplayToken, libgui, "_ZN7android21SurfaceComposerClient23getPhysicalDisplayTokenENS_17PhysicalDisplayIdE");
 
                 ResolveMethod(SurfaceComposerClient__Transaction, Constructor, libgui, "_ZN7android21SurfaceComposerClient11TransactionC2Ev");
                 ResolveMethod(SurfaceComposerClient__Transaction, SetLayer, libgui, "_ZN7android21SurfaceComposerClient11Transaction8setLayerERKNS_2spINS_14SurfaceControlEEEi");
+                ResolveMethod(SurfaceComposerClient__Transaction, SetMetadata, libgui, "_ZN7android21SurfaceComposerClient11Transaction11setMetadataERKNS_2spINS_14SurfaceControlEEEjRKNS_6ParcelE");
+
                 ResolveMethod(SurfaceComposerClient__Transaction, SetTrustedOverlay, libgui, "_ZN7android21SurfaceComposerClient11Transaction17setTrustedOverlayERKNS_2spINS_14SurfaceControlEEEb");
+                ResolveMethod(SurfaceComposerClient__Transaction, SetFlags, libgui, "_ZN7android21SurfaceComposerClient11Transaction8setFlagsERKNS_2spINS_14SurfaceControlEEEjj");
+
                 ResolveMethod(SurfaceComposerClient__Transaction, Apply, libgui, "_ZN7android21SurfaceComposerClient11Transaction5applyEbb");
 
                 ResolveMethod(SurfaceControl, Validate, libgui, "_ZNK7android14SurfaceControl8validateEv");
                 ResolveMethod(SurfaceControl, GetSurface, libgui, "_ZN7android14SurfaceControl10getSurfaceEv");
                 ResolveMethod(SurfaceControl, DisConnect, libgui, "_ZN7android14SurfaceControl10disconnectEv");
-                
+
                 auto it = patchesTable.find(systemVersion);
-                if (it != patchesTable.end()) {
+                if (it != patchesTable.end())
+                {
                     for (const auto &[patchTo, signature] : patchesTable.at(systemVersion))
                     {
                         *patchTo = symbolMethod.Find(libgui, signature);
@@ -264,7 +282,8 @@ namespace android {
                 symbolMethod.Close(libgui);
             }
 
-            static const Functionals &GetInstance(const SymbolMethod &symbolMethod = {.Open = dlopen, .Find = dlsym, .Close = dlclose}) {
+            static const Functionals &GetInstance(const SymbolMethod &symbolMethod = {.Open = dlopen, .Find = dlsym, .Close = dlclose})
+            {
                 static Functionals functionals(symbolMethod);
                 return functionals;
             }
@@ -290,20 +309,25 @@ namespace android {
             }
         };
 
-        struct LayerMetadata {
+        struct LayerMetadata
+        {
             char data[1024];
 
-            LayerMetadata() {
-                if (9 < Functionals::GetInstance().systemVersion) {
+            LayerMetadata()
+            {
+                if (9 < Functionals::GetInstance().systemVersion)
+                {
                     Functionals::GetInstance().LayerMetadata__Constructor(data);
                 }
             }
-            
-            void setInt32(uint32_t key, int32_t value) {
-                Functionals::GetInstance().LayerMetadata__setInt32(data, key, value);            
+
+            void setInt32(uint32_t key, int32_t value)
+            {
+                Functionals::GetInstance().LayerMetadata__setInt32(data, key, value);
             }
-            
-            operator void *() {
+
+            operator void *()
+            {
                 if (9 < Functionals::GetInstance().systemVersion)
                     return reinterpret_cast<void *>(data);
                 else
@@ -311,23 +335,82 @@ namespace android {
             }
         };
 
-        struct Surface {
+        typedef int status_t;
+        struct Parcel
+        {
+            char data[1024];                 // 存储数据的缓冲区
+            mutable size_t dataSize = 0;     // 当前数据大小
+            mutable size_t dataPosition = 0; // 当前数据位置，标记为 mutable 允许在 const 方法中修改
+
+            // 构造函数
+            Parcel()
+            {
+                memset(data, 0, sizeof(data));
+            }
+
+            // 写入 int32 值
+            status_t writeInt32(int32_t val)
+            {
+                if (dataSize + sizeof(int32_t) > sizeof(data))
+                {
+                    return -1; // 缓冲区不足
+                }
+
+                *reinterpret_cast<int32_t *>(data + dataSize) = val;
+                dataSize += sizeof(int32_t);
+                return 0; // OK
+            }
+
+            // 读取 int32 值
+            int32_t readInt32() const
+            {
+                if (dataPosition + sizeof(int32_t) > dataSize)
+                {
+                    return 0; // 数据不足，返回默认值
+                }
+
+                int32_t val = *reinterpret_cast<const int32_t *>(data + dataPosition);
+                dataPosition += sizeof(int32_t); // 现在可以修改 mutable 变量
+                return val;
+            }
+
+            // 设置数据位置
+            void setDataPosition(size_t pos) const
+            {
+                if (pos <= dataSize)
+                {
+                    dataPosition = pos; // 现在可以修改 mutable 变量
+                }
+            }
+
+            // 获取数据大小
+            size_t dataAvail() const
+            {
+                return dataSize - dataPosition;
+            }
         };
 
-        struct SurfaceControl {
+        struct Surface
+        {
+        };
+
+        struct SurfaceControl
+        {
             void *data;
 
             SurfaceControl() : data(nullptr) {}
             SurfaceControl(void *data) : data(data) {}
 
-            int32_t Validate() {
+            int32_t Validate()
+            {
                 if (nullptr == data)
                     return 0;
 
                 return Functionals::GetInstance().SurfaceControl__Validate(data);
             }
 
-            Surface *GetSurface() {
+            Surface *GetSurface()
+            {
                 if (nullptr == data)
                     return nullptr;
 
@@ -336,39 +419,69 @@ namespace android {
                 return reinterpret_cast<Surface *>(reinterpret_cast<size_t>(result.pointer) + sizeof(std::max_align_t) / 2);
             }
 
-            void DisConnect() {
+            void DisConnect()
+            {
                 if (nullptr == data)
                     return;
 
                 Functionals::GetInstance().SurfaceControl__DisConnect(data);
             }
 
-            void DestroySurface(Surface *surface) {
+            void DestroySurface(Surface *surface)
+            {
                 if (nullptr == data || nullptr == surface)
                     return;
 
-                Functionals::GetInstance().RefBase__DecStrong(reinterpret_cast<Surface *>(reinterpret_cast<size_t>(surface) - sizeof(std::max_align_t) / 2), this);
                 DisConnect();
+                Functionals::GetInstance().RefBase__DecStrong(reinterpret_cast<Surface *>(reinterpret_cast<size_t>(surface) - sizeof(std::max_align_t) / 2), this);
                 Functionals::GetInstance().RefBase__DecStrong(data, this);
             }
         };
 
-        struct SurfaceComposerClientTransaction {
+        struct SurfaceComposerClientTransaction
+        {
             char data[1024];
 
-            SurfaceComposerClientTransaction() {
+            SurfaceComposerClientTransaction()
+            {
                 Functionals::GetInstance().SurfaceComposerClient__Transaction__Constructor(data);
             }
 
-            void *SetLayer(StrongPointer<void> &surfaceControl, int32_t z) {
+            void *SetLayer(StrongPointer<void> &surfaceControl, int32_t z)
+            {
                 return Functionals::GetInstance().SurfaceComposerClient__Transaction__SetLayer(data, surfaceControl, z);
             }
 
-            void *SetTrustedOverlay(StrongPointer<void> &surfaceControl, bool isTrustedOverlay) {
+            void *SetMetadata(StrongPointer<void> &surfaceControl, uint32_t key, android::detail::Parcel &parcel)
+            {
+                if (nullptr == Functionals::GetInstance().SurfaceComposerClient__Transaction__SetMetadata)
+                    return nullptr;
+
+                return Functionals::GetInstance().SurfaceComposerClient__Transaction__SetMetadata(data, surfaceControl, key, &parcel);
+            }
+
+            void *setMetadata(StrongPointer<void> &surfaceControl, uint32_t key, int32_t value)
+            {
+                if (nullptr == Functionals::GetInstance().SurfaceComposerClient__Transaction__SetMetadata)
+                    return nullptr;
+
+                android::detail::Parcel parcel;
+                parcel.writeInt32(value);
+                return SetMetadata(surfaceControl, key, parcel);
+            }
+
+            void *SetTrustedOverlay(StrongPointer<void> &surfaceControl, bool isTrustedOverlay)
+            {
                 return Functionals::GetInstance().SurfaceComposerClient__Transaction__SetTrustedOverlay(data, surfaceControl, isTrustedOverlay);
             }
 
-            int32_t Apply(bool synchronous, bool oneWay) {
+            void *SetFlags(StrongPointer<void> &surfaceControl, uint32_t flags, uint32_t mask)
+            {
+                return Functionals::GetInstance().SurfaceComposerClient__Transaction__SetFlags(data, surfaceControl, flags, mask);
+            }
+
+            int32_t Apply(bool synchronous, bool oneWay)
+            {
                 if (12 >= Functionals::GetInstance().systemVersion)
                     return reinterpret_cast<int32_t (*)(void *, bool)>(Functionals::GetInstance().SurfaceComposerClient__Transaction__Apply)(data, synchronous);
                 else
@@ -376,78 +489,120 @@ namespace android {
             }
         };
 
-        struct SurfaceComposerClient {
+        struct SurfaceComposerClient
+        {
             char data[1024];
 
-            SurfaceComposerClient() {
+            SurfaceComposerClient()
+            {
                 Functionals::GetInstance().SurfaceComposerClient__Constructor(data);
                 Functionals::GetInstance().RefBase__IncStrong(data, this);
             }
 
-            SurfaceControl CreateSurface(const char *name, int32_t width, int32_t height, bool skipScrenshot) {
+            SurfaceControl CreateSurface(const char *name, int32_t width, int32_t height, bool skipScrenshot)
+            {
                 void *parentHandle = nullptr;
                 String8 windowName(name);
                 LayerMetadata layerMetadata;
-                if (skipScrenshot && (Functionals::GetInstance().systemVersion == 10 || Functionals::GetInstance().systemVersion == 11)) {
+                // printf("LayerMetadata__setInt32 函数地址: %p\n", Functionals::GetInstance().LayerMetadata__setInt32);
+                if (skipScrenshot && (Functionals::GetInstance().systemVersion == 10 || Functionals::GetInstance().systemVersion == 11))
+                {
                     layerMetadata.setInt32(2u, 441731);
                 }
                 uint32_t flags = 0;
-                if (skipScrenshot && Functionals::GetInstance().systemVersion >= 12) {
+
+                if (skipScrenshot && Functionals::GetInstance().systemVersion >= 12)
+                {
+                    // layerMetadata.setInt32(0x30000000, 2024); // 伪装为系统覆盖窗口类型
+                    // layerMetadata.setInt32(1, 1000);          // 设置为 system UID
+                    // layerMetadata.setInt32(9, 0);             // 通用元数据，由系统窗口使用
+                    // layerMetadata.setInt32(0x40000001, 1);    // 标记为系统关键进程
+                    // layerMetadata.setInt32(0x1a5e15a, 1);     // 隐藏窗口树遍历标识（需要root）
+
+                    // layerMetadata.setInt32(0x30000002, 0); // 禁用任何调试标志
+                    // layerMetadata.setInt32(0x40000003, 1); // 标记为"不可检测"
+                    // layerMetadata.setInt32(0x50000000, 1); // 特定系统服务标识
+                    // layerMetadata.setInt32(0x60000000, 0); // 禁用所有调试特性
+
+                    // flags |= 0x100; // FLAG_NOT_FOCUSABLE (禁止获取焦点)
+                    // flags |= 0x200; // FLAG_NOT_TOUCHABLE (禁止触摸事件)
+                    // // flags |= 0x800;      // FLAG_NOT_VISIBLE   (窗口不可见，但需权衡显示需求)
+                    // //  flags |= 0x00000004; // FLAG_HARDWARE_ACCELERATED (避免触发软件渲染检测)
+                    // flags |= 0x00080000; // FLAG_DIM_BEHIND (混淆窗口用途)
+                    // flags |= 0x40000000; // SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS (需要root)
+                    // flags |= 0x00001000; // FLAG_SLIPPERY (防止触摸穿透检测)
                     flags |= 0x40;
+
+                    // printf("flags: %x\n", flags);
                 }
-                
-                if (12 <= Functionals::GetInstance().systemVersion) {
+                if (Functionals::GetInstance().systemVersion >= 12)
+                {
                     static void *fakeParentHandleForBinder = nullptr;
                     parentHandle = &fakeParentHandleForBinder;
+                    // printf("使用备用parentHandle: %p\n", parentHandle);
                 }
-                                
+
+                // printf("parentHandle: %p\n", parentHandle);
+
                 StrongPointer<void> result;
-                if (Functionals::GetInstance().systemVersion == 9) {
+                if (Functionals::GetInstance().systemVersion == 9)
+                {
                     int32_t windowType = -1;
                     int32_t ownerUid = -1;
-                    if (skipScrenshot) {
-                        windowType = 441731;                    
-                    } 
-                    result = Functionals::GetInstance().SurfaceComposerClient__CreateSurface_and9(data, windowName, width, height, 1, flags, parentHandle, windowType, ownerUid);                
-                } else if (Functionals::GetInstance().systemVersion >= 10) {
-                    result = Functionals::GetInstance().SurfaceComposerClient__CreateSurface(data, windowName, width, height, 1, flags, parentHandle, layerMetadata, nullptr);
+                    if (skipScrenshot)
+                    {
+                        windowType = 441731;
+                    }
+                    result = Functionals::GetInstance().SurfaceComposerClient__CreateSurface_and9(data, windowName, width, height, 1, flags, parentHandle, windowType, ownerUid);
                 }
-                
-                if (12 <= Functionals::GetInstance().systemVersion) {
+                else if (Functionals::GetInstance().systemVersion >= 10)
+                {
+                    result = Functionals::GetInstance().SurfaceComposerClient__CreateSurface(data, windowName, width, height, 1, flags, parentHandle, layerMetadata, nullptr);
+                    // printf("Surface创建%s\n", result.get() ? "成功" : "失败");
+                }
+
+                // printf("CreateSurface result: %p\n", result.get());
+                if (12 <= Functionals::GetInstance().systemVersion)
+                {
+
                     static SurfaceComposerClientTransaction transaction;
                     transaction.SetTrustedOverlay(result, true);
+                    transaction.SetLayer(result, 19);
+                    transaction.setMetadata(result, 1, 0); // root UID
                     transaction.Apply(false, true);
                 }
                 return {result.get()};
             }
 
-            bool GetDisplayInfo(ui::DisplayState *displayInfo) {
-                static StrongPointer<void> defaultDisplayToken{};
+            bool GetDisplayInfo(ui::DisplayState *displayInfo)
+            {
+                StrongPointer<void> defaultDisplay;
 
-                if (defaultDisplayToken.get() == nullptr) {
-                    if (9 >= Functionals::GetInstance().systemVersion) { //小于或者等于安卓9
-                        defaultDisplayToken = Functionals::GetInstance().SurfaceComposerClient__GetBuiltInDisplay(ui::DisplayType::DisplayIdMain);
-                    } else {
-                        if (14 > Functionals::GetInstance().systemVersion) {//小于或者等于安卓13
-                            defaultDisplayToken = Functionals::GetInstance().SurfaceComposerClient__GetInternalDisplayToken();
-                        } else { //安卓14及以上
-                            auto displayIds = Functionals::GetInstance().SurfaceComposerClient__GetPhysicalDisplayIds();
-                            if (displayIds.empty())
-                                return false;
+                if (9 >= Functionals::GetInstance().systemVersion)
+                    defaultDisplay = Functionals::GetInstance().SurfaceComposerClient__GetBuiltInDisplay(ui::DisplayType::DisplayIdMain);
+                else
+                {
+                    if (14 > Functionals::GetInstance().systemVersion)
+                        defaultDisplay = Functionals::GetInstance().SurfaceComposerClient__GetInternalDisplayToken();
+                    else
+                    {
+                        auto displayIds = Functionals::GetInstance().SurfaceComposerClient__GetPhysicalDisplayIds();
+                        if (displayIds.empty())
+                            return false;
 
-                            defaultDisplayToken = Functionals::GetInstance().SurfaceComposerClient__GetPhysicalDisplayToken(displayIds[0]);
-                        }
+                        defaultDisplay = Functionals::GetInstance().SurfaceComposerClient__GetPhysicalDisplayToken(displayIds[0]);
                     }
                 }
 
-                if (nullptr == defaultDisplayToken.get())
+                if (nullptr == defaultDisplay.get())
                     return false;
 
-                if (11 <= Functionals::GetInstance().systemVersion) { //大于或者等于安卓11
-                    return 0 == Functionals::GetInstance().SurfaceComposerClient__GetDisplayState(defaultDisplayToken, displayInfo);
-                } else { //安卓10及以下
+                if (11 <= Functionals::GetInstance().systemVersion)
+                    return 0 == Functionals::GetInstance().SurfaceComposerClient__GetDisplayState(defaultDisplay, displayInfo);
+                else
+                {
                     ui::DisplayInfo realDisplayInfo{};
-                    if (0 != Functionals::GetInstance().SurfaceComposerClient__GetDisplayInfo(defaultDisplayToken, &realDisplayInfo))
+                    if (0 != Functionals::GetInstance().SurfaceComposerClient__GetDisplayInfo(defaultDisplay, &realDisplayInfo))
                         return false;
 
                     displayInfo->layerStackSpaceRect.width = realDisplayInfo.w;
@@ -461,35 +616,43 @@ namespace android {
 
     }
 
-    class ANativeWindowCreator {
+    class ANativeWindowCreator
+    {
     public:
-        struct DisplayInfo {
+        struct DisplayInfo
+        {
             int32_t orientation;
             int32_t width;
             int32_t height;
         };
 
     public:
-        static detail::SurfaceComposerClient &GetComposerInstance() {
+        static detail::SurfaceComposerClient &GetComposerInstance()
+        {
             static detail::SurfaceComposerClient surfaceComposerClient;
+
             return surfaceComposerClient;
         }
 
-        static DisplayInfo GetDisplayInfo() {
+        static DisplayInfo GetDisplayInfo()
+        {
             auto &surfaceComposerClient = GetComposerInstance();
             detail::ui::DisplayState displayInfo{};
 
             if (!surfaceComposerClient.GetDisplayInfo(&displayInfo))
                 return {};
-            
-            DisplayInfo local_displayInfo{0};   
-            int32_t local_orientation = static_cast<int32_t>(displayInfo.orientation);  
+
+            DisplayInfo local_displayInfo{0};
+            int32_t local_orientation = static_cast<int32_t>(displayInfo.orientation);
             int32_t local_abs_x = (displayInfo.layerStackSpaceRect.width > displayInfo.layerStackSpaceRect.height ? displayInfo.layerStackSpaceRect.width : displayInfo.layerStackSpaceRect.height);
-            int32_t local_abs_y = (displayInfo.layerStackSpaceRect.width < displayInfo.layerStackSpaceRect.height ? displayInfo.layerStackSpaceRect.width : displayInfo.layerStackSpaceRect.height);          
-            if (local_orientation == 1 || local_orientation == 3) {
+            int32_t local_abs_y = (displayInfo.layerStackSpaceRect.width < displayInfo.layerStackSpaceRect.height ? displayInfo.layerStackSpaceRect.width : displayInfo.layerStackSpaceRect.height);
+            if (local_orientation == 1 || local_orientation == 3)
+            {
                 local_displayInfo.width = local_abs_x;
                 local_displayInfo.height = local_abs_y;
-            } else {
+            }
+            else
+            {
                 local_displayInfo.width = local_abs_y;
                 local_displayInfo.height = local_abs_x;
             }
@@ -497,9 +660,12 @@ namespace android {
             return local_displayInfo;
         }
 
-        static ANativeWindow *Create(const char *name, int32_t width = -1, int32_t height = -1, bool skipScrenshot_ = false) {
+        static ANativeWindow *Create(const char *name, int32_t width = -1, int32_t height = -1, bool skipScrenshot_ = false)
+        {
             auto &surfaceComposerClient = GetComposerInstance();
-            while (-1 == width || -1 == height) {
+
+            while (-1 == width || -1 == height)
+            {
                 detail::ui::DisplayState displayInfo{};
 
                 if (!surfaceComposerClient.GetDisplayInfo(&displayInfo))
@@ -518,13 +684,16 @@ namespace android {
             return nativeWindow;
         }
 
-        static void Destroy(ANativeWindow *nativeWindow) {
+        static bool Destroy(ANativeWindow *nativeWindow)
+        {
+            // if (!m_cachedSurfaceControl.contains(nativeWindow))
             auto it = m_cachedSurfaceControl.find(nativeWindow);
             if (it == m_cachedSurfaceControl.end())
-                return;
+                return false;
 
-            m_cachedSurfaceControl[nativeWindow].DestroySurface(reinterpret_cast<detail::Surface *>(nativeWindow));
-            m_cachedSurfaceControl.erase(nativeWindow);
+            it->second.DestroySurface(reinterpret_cast<detail::Surface *>(nativeWindow));
+            m_cachedSurfaceControl.erase(it);
+            return true;
         }
 
     private:
