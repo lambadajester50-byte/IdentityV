@@ -133,6 +133,7 @@ static const NameMapping prop_table[] = {
     {"puppet", "[厂长傀儡]"},
     {"tower", "[窥视者]"},
     {"huojian", "[哭丑火箭]"},
+    {"patro", "[巡视者]"},
 };
 
 // ==================== 通用查找函数 ====================
@@ -187,10 +188,11 @@ static const char* getboss(const char* 类名) {
     else if (strstr(类名, "yith")) {
         result = strstr(类名, "ghost") ? "[伊斯人]" : "[时空之影]";
     }
-    // 厂长：特殊路径匹配（排除小丑 butcher_sxwd）
-    else if ((strstr(类名, "butcher.gim") || strstr(类名, "boss\\butcher")) 
+    // 厂长：特殊路径匹配（排除小丑 butcher_sxwd、鹿头 dm65_butcher_ll，这两个资源都挂在厂长目录下）
+    else if ((strstr(类名, "butcher.gim") || strstr(类名, "boss\\butcher"))
              && !strstr(类名, "_lod.gim")
-             && !strstr(类名, "butcher_sxwd")) {  // 排除小丑
+             && !strstr(类名, "butcher_sxwd")  // 排除小丑
+             && !strstr(类名, "dm65_butcher_ll")) {  // 排除鹿头
         result = "[厂长]";
     }
     // 常规查表

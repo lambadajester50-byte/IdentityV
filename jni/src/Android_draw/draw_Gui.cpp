@@ -485,6 +485,32 @@ inline bool should_filter(const std::string& name) {
     return false;
 }
 
+// ================== 幽灵/隐身状态判定(合并原有特殊场景排除) ==================
+// +0x70 == 0x1000000 且 +0x1a0 == 450.0 才是"正常在场"的真实角色/道具;
+// 其余取值(包括65150鬼魂视角等)统一视为幽灵态, 由 inform_ghost 决定是否仍然显示。
+bool ShouldSkipEntity(const DataStruct& obj) {
+    // 这几类名字命中即直接跳过, 与幽灵判定无关(原本散落在渲染循环里, 现在收拢到一处)
+    if (strstr(obj.类名, "h55_joseph_camera") != NULL) return true;   // 约瑟夫相机
+    if (strstr(obj.类名, "redqueen_mirror") != NULL) return true;      // 红夫人镜子
+    if (strstr(obj.类名, "burke_console") != NULL) return true;        // 疯眼场景
+    if (strstr(obj.类名, "h55_survivor_w_shangren_tiaoban") != NULL) return true; // 商人跳板
+
+    int checkVal = getDword(obj.obj + 0x70);
+    float checkFloat = getFloat(obj.obj + 0x1a0);
+    bool is_ghost_obj = (checkVal != 0x1000000 || checkFloat != 450.0f);
+
+    if (is_ghost_obj) {
+        if (!inform_ghost) return true; // 不显示幽灵/隐身角色, 直接过滤
+        // 即便开启显示幽灵, 这几个特殊角色的隐身态数据不可靠(坐标/朝向失真), 依然过滤
+        if (strstr(obj.str, "红蝶") || strstr(obj.str, "无常") ||
+            strstr(obj.str, "歌剧") || strstr(obj.str, "破轮") ||
+            strstr(obj.str, "木偶") || strstr(obj.str, "冒险家")) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void read_thread(long int PD1,long int PD2,long int PD3)
 {
     bool waitingLogged = false;
@@ -634,7 +660,7 @@ void read_thread(long int PD1,long int PD2,long int PD3)
         	std::string s;
         	//预知监管者
             if (show_draw_prophet){//预知开始
-                if (strstr(过滤类名.c_str(), "burke_console") == NULL&&strstr(过滤类名.c_str(), "h55_joseph_camera") == NULL&&strstr(过滤类名.c_str(), "redqueen_e_heijin_yizi") == NULL){
+                if (strstr(过滤类名.c_str(), "burke_console") == NULL&&strstr(过滤类名.c_str(), "h55_joseph_camera") == NULL&&strstr(过滤类名.c_str(), "redqueen_e_heijin_yizi") == NULL&&strstr(过滤类名.c_str(), "_lod") == NULL){
                     if (strstr(过滤类名.c_str(), "boss") != NULL){
                         s += getboss(过滤类名.c_str());
                         sprintf(监管者预知, "%s", s.c_str());
@@ -772,7 +798,15 @@ void Draw_Main(ImDrawList *Draw){
         D.X = getFloat(data[i].objcoor + 0xa0);
         D.Z = getFloat(data[i].objcoor + 0xa4);
         D.Y = getFloat(data[i].objcoor + 0xa8);
-        
+
+        // 已锁定的自身: 只负责判断"还活着没"+持续更新坐标, 不重新参与后面的识别/绘制逻辑
+        if (自身 != 0 && data[i].obj == 自身) {
+            if (!ShouldSkipEntity(data[i]) && !(D.X==0 && D.Y==0) && D.Z>-300) {
+                Z.X = D.X; Z.Z = D.Z; Z.Y = D.Y;
+            }
+            continue; // 不管有效无效, 自身都不需要再走下面的常规实体流程
+        }
+
         if (D.X==0 || D.Y==0){
 		    continue;//跳过xy0
 		}
@@ -887,110 +921,21 @@ void Draw_Main(ImDrawList *Draw){
     		}
 	
 		    if (show_draw_Prop&&data[i].阵营==4){
-                std::string s;        
-                if (strstr(data[i].类名, "h55_pendant_inject") != NULL){
-                    s += "[镇静剂]";
+                const char* propName = getprop(data[i].类名);
+                if (propName) {
+                    std::string s = propName;
                     s += std::to_string((int) 距离);
                     s += " 米";
+                    auto textSize = ImGui::CalcTextSize(s.c_str(), 0, 25);
+                    Draw->AddText({r_x-(textSize.x/2),r_y}, ImColor(255,200,0,255), s.c_str());
                 }
-                else if (strstr(data[i].类名, "h55_pendant_moshubang") != NULL){
-                    s += "[魔术棒]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_flaregun") != NULL){
-                    s += "[信号枪]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_huzhou") != NULL){
-                    s += "[护肘]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_map") != NULL){
-                    s += "[地图]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_book") != NULL){
-                    s += "[书]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_gjx") != NULL){
-                    s += "[工具箱]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_glim") != NULL){
-                    s += "[手电筒]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_xiangshuiping") != NULL){
-                    s += "[忘忧之香]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_controller") != NULL){
-                    s += "[遥控器]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_football") != NULL){
-                    s += "[橄榄球]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_huaibiao") != NULL){
-                    s += "[怀表]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-                }
-                else if (strstr(data[i].类名, "h55_pendant_puppet") != NULL){
-                    s += "[厂长傀儡]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-    		    }
-    		    //插眼
-    		    else if (strstr(data[i].类名, "h55_pendant_tower") != NULL){
-                    s += "[窥视者]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-    		    }
-    		    //
-    		    else if (strstr(data[i].类名, "h55_pendant_patro") != NULL){
-                    s += "[巡视者]";
-                    s += std::to_string((int) 距离);
-                    s += " 米";
-    		    }
-                auto textSize = ImGui::CalcTextSize(s.c_str(), 0, 25);
-                Draw->AddText({r_x-(textSize.x/2),r_y}, ImColor(255,200,0,255), s.c_str());
-            
             }
 
             int zy;//=getbool(data[i].obj + 0xaa);
-            vm_readv(data[i].obj + 0xaa, &zy, 1);        
-                
-            if (getFloat(data[i].obj+0x1a0)==450){     
-                if (strstr(data[i].类名, "h55_joseph_camera") != NULL){
-                    continue;//跳过约瑟夫相机
-                }
-                    
-                if (strstr(data[i].类名, "redqueen_mirror") != NULL){
-                    continue;//跳过红芙蓉镜子
-                }
-                
-                if (strstr(data[i].类名, "burke_console") != NULL){
-    		        continue;//跳过疯眼场景
-    		    }
-    		    
-    			if (strstr(data[i].类名, "h55_survivor_w_shangren_tiaoban") != NULL){
-    			    continue;//跳过商人跳板
-    			}
-    			
-                if (show_draw_Role&&strstr(data[i].类名, "chr") != NULL){                    
+            vm_readv(data[i].obj + 0xaa, &zy, 1);
+
+            if (!ShouldSkipEntity(data[i])){
+                if (show_draw_Role&&strstr(data[i].类名, "chr") != NULL){
                     std::string test;
                     test += " [";
                     test += std::to_string((int) 距离);    
