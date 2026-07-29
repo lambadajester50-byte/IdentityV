@@ -189,7 +189,7 @@ static bool show_demo_window = false;
 static bool show_another_window = false;
 static bool show_window = true;  // 音量键控制：音量下=隐藏，音量上=显示
 static bool voice = true;
-static bool inform_ghost = true; // 显示鬼魂
+static bool inform_ghost = false; // 显示鬼魂
 static bool show_sohook = false;  // 骨骼与进度覆盖层
 
 float z_x, z_y, z_z, d_x, d_y, d_z, camera, r_x, r_y, r_w;
