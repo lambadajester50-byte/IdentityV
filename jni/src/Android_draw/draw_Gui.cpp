@@ -2,16 +2,11 @@
 #include <thread>
 #include <cstdint>
 #include <stdio.h>
-#include "My_font/zh_Font.h"
-#include "My_font/fontawesome-brands.h"
-#include "My_font/fontawesome-regular.h"
-#include "My_font/fontawesome-solid.h"
-#include "My_font/gui_icon.h"
+#include "My_font/wrg_font.h"
 #include "kerneldriver-qxqd.hpp"
 #include "DrawTool.h"
 #include "Name.h"
 #include "SoHookIntegration.h"
-#include "picture_ZhenAiKun_png.h"
 #include <linux/input.h>
 #include <sstream>
 #include <iomanip>
@@ -42,12 +37,8 @@ ImGuiWindow *g_window;
 // 绝对屏幕X _ Y
 int abs_ScreenX, abs_ScreenY;
 int native_window_screen_x, native_window_screen_y;
-BaseTexData *kk_image;
 std::unique_ptr<AndroidImgui>  graphics;
 ImFont* zh_font = NULL;
-ImFont* icon_font_0 = NULL;
-ImFont* icon_font_1 = NULL;
-ImFont* icon_font_2 = NULL;
 bool niexi;
 float 矩阵视野距离;
 float 孽蜥距离,孽蜥按住距离;
@@ -61,24 +52,12 @@ bool M_Android_LoadFont(float SizePixels) {
     config.FontDataOwnedByAtlas = false;
     config.OversampleH = 1;
     config.SizePixels = SizePixels;
-    ::zh_font = io.Fonts->AddFontFromMemoryTTF((void *)OPPOSans_H, OPPOSans_H_size, SizePixels, &config, io.Fonts->GetGlyphRangesChineseFull());
-
-	static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-    ImFontConfig icons_config;
-    icons_config.MergeMode = true;
-    icons_config.PixelSnapH = true;
-    icons_config.OversampleH = 3.0;
-    icons_config.OversampleV = 3.0;		
-    icons_config.SizePixels = SizePixels;
-	::icon_font_0 = io.Fonts->AddFontFromMemoryCompressedTTF((const void *)&font_awesome_brands_compressed_data, sizeof(font_awesome_brands_compressed_data), 0.0f, &icons_config, icons_ranges);
-	::icon_font_1 = io.Fonts->AddFontFromMemoryCompressedTTF((const void *)&font_awesome_regular_compressed_data, sizeof(font_awesome_regular_compressed_data), 0.0f, &icons_config, icons_ranges);
-	::icon_font_2 = io.Fonts->AddFontFromMemoryCompressedTTF((const void *)&font_awesome_solid_compressed_data, sizeof(font_awesome_solid_compressed_data), 0.0f, &icons_config, icons_ranges);
+    ::zh_font = io.Fonts->AddFontFromMemoryTTF((void *)WRG_Font, WRG_Font_size, SizePixels, &config, io.Fonts->GetGlyphRangesChineseFull());
 
     return zh_font != nullptr;
 }
 void init_My_drawdata() {
     M_Android_LoadFont(25.0f); //加载内存字体(含中文TTF+图标)
-    ::kk_image = graphics->LoadTextureFromMemory((void *)picture_ZhenAiKun_PNG_H, sizeof(picture_ZhenAiKun_PNG_H));
 }
 
 

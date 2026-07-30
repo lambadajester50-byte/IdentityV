@@ -22,13 +22,8 @@ extern int abs_ScreenX, abs_ScreenY;
 
 extern int native_window_screen_x, native_window_screen_y;
 
-extern BaseTexData *kk_image;
-
 extern std::unique_ptr<AndroidImgui>  graphics;
 extern ImFont* zh_font;
-extern ImFont* icon_font_0;
-extern ImFont* icon_font_1;
-extern ImFont* icon_font_2;
 
 
 // 上次UI位置

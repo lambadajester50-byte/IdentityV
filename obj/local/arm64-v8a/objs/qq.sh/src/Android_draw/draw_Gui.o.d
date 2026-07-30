@@ -7,15 +7,10 @@
   jni/include/Android_touch/TouchHelperA.h \
   jni/include/Android_touch/VectorStruct.h \
   jni/include/Android_my_imgui/my_imgui.h \
-  jni/include/ImGui/My_font/zh_Font.h \
-  jni/include/ImGui/My_font/fontawesome-brands.h \
-  jni/include/ImGui/My_font/fontawesome-regular.h \
-  jni/include/ImGui/My_font/fontawesome-solid.h \
-  jni/include/ImGui/My_font/gui_icon.h \
+  jni/include/ImGui/My_font/wrg_font.h \
   jni/src/Android_draw/kerneldriver-qxqd.hpp \
   jni/src/Android_draw/DrawTool.h jni/src/Android_draw/Name.h \
-  jni/include/Android_draw/SoHookIntegration.h \
-  jni/include/My_Utils/picture_ZhenAiKun_png.h
+  jni/include/Android_draw/SoHookIntegration.h
 jni/include/Android_draw/draw.h:
 jni/include/ImGui/imgui.h:
 jni/include/ImGui/imconfig.h:
@@ -26,13 +21,8 @@ jni/include/Android_draw/AndroidImgui.h:
 jni/include/Android_touch/TouchHelperA.h:
 jni/include/Android_touch/VectorStruct.h:
 jni/include/Android_my_imgui/my_imgui.h:
-jni/include/ImGui/My_font/zh_Font.h:
-jni/include/ImGui/My_font/fontawesome-brands.h:
-jni/include/ImGui/My_font/fontawesome-regular.h:
-jni/include/ImGui/My_font/fontawesome-solid.h:
-jni/include/ImGui/My_font/gui_icon.h:
+jni/include/ImGui/My_font/wrg_font.h:
 jni/src/Android_draw/kerneldriver-qxqd.hpp:
 jni/src/Android_draw/DrawTool.h:
 jni/src/Android_draw/Name.h:
 jni/include/Android_draw/SoHookIntegration.h:
-jni/include/My_Utils/picture_ZhenAiKun_png.h:
