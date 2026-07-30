@@ -30,8 +30,9 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/res
 
 LOCAL_SRC_FILES := src/main.cpp
 LOCAL_SRC_FILES += src/Android_draw/draw_Gui.cpp
-LOCAL_SRC_FILES += src/Android_draw/SoHookIntegration.cpp
-LOCAL_SRC_FILES += src/res/cJSON.c
+# 发布版本: 注入功能已停用, 排除注入相关源码及其依赖的第三方黑盒.so, 不参与编译
+# LOCAL_SRC_FILES += src/Android_draw/SoHookIntegration.cpp
+# LOCAL_SRC_FILES += src/res/cJSON.c
 LOCAL_SRC_FILES += src/Android_draw/AndroidImgui.cpp
 LOCAL_SRC_FILES += src/Android_touch/TouchHelperA.cpp
 LOCAL_SRC_FILES += src/Android_Graphics/GraphicsManager.cpp

@@ -58,7 +58,8 @@ void daemonize() {
 int main(int argc, char *argv[]) {
 
     daemonize();
-    SoHook::StartListeners();
+    // 发布版本: 注入功能已停用
+    // SoHook::StartListeners();
 
 	   
     value1 = 970061201;
@@ -102,7 +103,8 @@ int main(int argc, char *argv[]) {
     }
     
     graphics->Shutdown();
-    SoHook::StopListeners();
+    // 发布版本: 注入功能已停用
+    // SoHook::StopListeners();
     android::ANativeWindowCreator::Destroy(::window);
     return 0;
 }

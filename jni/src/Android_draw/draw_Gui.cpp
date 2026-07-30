@@ -748,7 +748,7 @@ void read_thread(long int PD1,long int PD2,long int PD3)
 void Draw_Main(ImDrawList *Draw){
     if (libbase == 0 || 状态 == 0) return;  // 数据未就绪，跳过本帧绘制
     int 内核人物数量 = 0;
-    const bool 模仿者绘制中 = SoHook::IsCopycatDrawingActive();
+    const bool 模仿者绘制中 = false; // 发布版本: 注入功能已停用, SoHook::IsCopycatDrawingActive() 不再调用
     
     Matrix = getPtr64(getPtr64(libbase + MatrixOffset) + 0xa58) + 0x2c0; //矩阵
     M.X = getFloat(Matrix - 0x290);
@@ -1031,10 +1031,11 @@ void Draw_Main(ImDrawList *Draw){
             }                
         }
     }
-    if (show_sohook)
-        SoHook::DrawOverlay(Draw, matrix, px, py, 内核人物数量,
-                            Z.X, Z.Z, Z.Y, 距离比例);
-    show_draw_ClassName = 0;            
+    // 发布版本: 注入功能已停用
+    // if (show_sohook)
+    //     SoHook::DrawOverlay(Draw, matrix, px, py, 内核人物数量,
+    //                         Z.X, Z.Z, Z.Y, 距离比例);
+    show_draw_ClassName = 0;
 }
         
 
@@ -1100,7 +1101,8 @@ void Layout_tick_UI(bool *main_thread_flag) {
 
     px = static_cast<float>(displayInfo.width) / 2;
     py = static_cast<float>(displayInfo.height) / 2;
-    SoHook::Update(pid);
+    // 发布版本: 注入功能已停用
+    // SoHook::Update(pid);
 
     Draw_Main(ImGui::GetForegroundDrawList());
 
@@ -1155,19 +1157,21 @@ void Layout_tick_UI(bool *main_thread_flag) {
             ImGui::SameLine();
             ImGui::Checkbox("显示密码机", &show_draw_secret_mechine);
 
-            ImGui::Checkbox("骨骼与进度", &show_sohook);
+            // 发布版本: 注入功能已停用
+            // ImGui::Checkbox("骨骼与进度", &show_sohook);
 
             ImGui::Text("");
             if (ImGui::Button("结束进程"))
                 exit(0);
         }
 
-        if (show_sohook) {
-            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            if (ImGui::CollapsingHeader("骨骼与进度")) {
-                SoHook::RenderPanel(pid);
-            }
-        }
+        // 发布版本: 注入功能已停用
+        // if (show_sohook) {
+        //     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        //     if (ImGui::CollapsingHeader("骨骼与进度")) {
+        //         SoHook::RenderPanel(pid);
+        //     }
+        // }
 
         g_window = ImGui::GetCurrentWindow();
         ImGui::End();
