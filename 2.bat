@@ -1,1 +1,0 @@
-move /Y "libs\arm64-v8a\qq.sh" ".\"

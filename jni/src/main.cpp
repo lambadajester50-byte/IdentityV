@@ -12,6 +12,7 @@
 #include <malloc.h>
 #include <iostream>
 #include <fstream>
+#include <sys/prctl.h>
 
 #include<iostream>
 #include<ctime>
@@ -21,9 +22,38 @@ using namespace std;
 #include "GraphicsManager.h" //获取 当前渲染模式
 #include "Android_draw/timer.h"
 #include "SoHookIntegration.h"
+#include "build_entropy.h"
 timer DrawFPS;
 float fps = 60;
 long int value1,value2,value3;
+
+// 编译期随机熵实际被读取一次，防止链接器/优化器把整段常量数组当死数据丢掉，
+// 顺带让每次编译产物字节内容不同（防哈希黑名单），本身不影响任何逻辑。
+static volatile unsigned g_entropy_sink = 0;
+static void touch_build_entropy() {
+    for (unsigned char b : g_build_entropy) {
+        g_entropy_sink += b;
+    }
+    g_entropy_sink += static_cast<unsigned>(g_build_tag[0]);
+}
+
+// 运行时把 /proc/<pid>/comm 改成常见系统/内核线程名之一，
+// 躲避"进程启动后再扫描进程名"这类动态检测；跟编译期改 LOCAL_MODULE 是两道独立的防线。
+static void spoof_process_name() {
+    static const char *kDisguiseNames[] = {
+        "kworker/u8:3",
+        "kworker/0:2",
+        "logd.auditd",
+        "mdnsd",
+        "vndservicemgr",
+        "hwservicemanager",
+        "wifi_forward",
+        "statsd",
+    };
+    srand(static_cast<unsigned>(time(nullptr)) ^ static_cast<unsigned>(getpid()));
+    const char *name = kDisguiseNames[rand() % (sizeof(kDisguiseNames) / sizeof(kDisguiseNames[0]))];
+    prctl(PR_SET_NAME, name);
+}
 
 void daemonize() {
     pid_t pid = fork();
@@ -37,6 +67,8 @@ void daemonize() {
     if (setsid() < 0) {
         exit(1);
     }
+
+    spoof_process_name();
 
     if (chdir("/") < 0) {
         exit(1);
@@ -58,6 +90,7 @@ void daemonize() {
 int main(int argc, char *argv[]) {
 
     daemonize();
+    touch_build_entropy();
     // 发布版本: 注入功能已停用
     // SoHook::StartListeners();
 

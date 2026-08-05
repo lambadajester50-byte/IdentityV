@@ -1,10 +1,14 @@
 LOCAL_PATH := $(call my-dir)
 
+# 每次构建可覆盖：产物文件名 + 优化等级随机化，防进程名/文件哈希黑名单
+# 未通过 1.bat/2.bat 传参时回退到默认值，保证直接 ndk-build 也能编译
+MODULE_NAME ?= qq
+BUILD_OPT_LEVEL ?= -O2
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := qq.sh
+LOCAL_MODULE := $(MODULE_NAME).sh
 
-LOCAL_CFLAGS := -fvisibility=hidden
+LOCAL_CFLAGS := -fvisibility=hidden $(BUILD_OPT_LEVEL)
 LOCAL_CPPFLAGS := -std=c++17
 LOCAL_CPPFLAGS += -fvisibility=hidden
 LOCAL_STRIP_MODE := --strip-unneeded --remove-section=.comment

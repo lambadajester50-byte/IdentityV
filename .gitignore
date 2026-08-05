@@ -4,6 +4,8 @@
 2.bat
 .obj/
 .libs/
+build_vars.bat
+build_last.bat
 # 编译输出
 *.o
 *.obj
