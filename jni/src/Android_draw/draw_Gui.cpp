@@ -472,6 +472,8 @@ bool ShouldSkipEntity(const DataStruct& obj) {
     if (strstr(obj.类名, "h55_joseph_camera") != NULL) return true;   // 约瑟夫相机
     if (strstr(obj.类名, "redqueen_mirror") != NULL) return true;      // 红夫人镜子
     if (strstr(obj.类名, "burke_console") != NULL) return true;        // 疯眼场景
+    if (strstr(obj.类名, "chr\\guajian") != NULL) return true;
+    if (strstr(obj.类名, "girl_e_sj_zuoyi") != NULL) return true;
     if (strstr(obj.类名, "h55_survivor_w_shangren_tiaoban") != NULL) return true; // 商人跳板
 
     int checkVal = getDword(obj.obj + 0x70);
